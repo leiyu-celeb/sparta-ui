@@ -1283,6 +1283,9 @@ export default{
     value4_1(val) {
       console.log(val)
     },
+    value4_2(val) {
+      console.log(val)
+    },
     value5(val) {
       console.log(val)
     },

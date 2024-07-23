@@ -278,14 +278,14 @@ export default {
     },
     // 自定义内容center插槽的显示时机
     centerSlotVisible() {
-      return (this.$slots.center && this.inputText && !this.isCustomFilter) || (this.$slots.center && this.isCustomFilter && !!this.value)
+      return (this.$slots.center && this.inputText && !this.isCustomFilter) || (this.useCenterSlotCustomFilter && !!this.value)
     },
     // 自定义内容center插槽的动态class
     centerSlotClass() {
-      return {'sp-select__center--bg': this.$slots.center && this.isCustomFilter && this.selectInputVisible }
+      return {'sp-select__center--bg': this.useCenterSlotCustomFilter && this.selectInputVisible }
     }, 
     selectInputClass() {
-      return { 'sp-selectInput__absolute': this.$slots.center && this.isCustomFilter && !!this.value && this.selectInputVisible, 'sp-selectInput__show': this.inputText || this.isOnComposition }
+      return { 'sp-selectInput__absolute': this.useCenterSlotCustomFilter && !!this.value && this.selectInputVisible, 'sp-selectInput__show': this.inputText || this.isOnComposition }
     },
     selectInputStyle() {
       return { height: this.selectInputBoxHeight, '--suffix-width': this.$refs['sp-select-suffix']?.clientWidth + 'px' }
@@ -318,8 +318,9 @@ export default {
     isMulti() {
       return this.multiple || this.groupMultiple
     },
+    // 显示清空icon
     showClearIcon() {
-      return this.clearable && this.inputText !== '' && this.isHover && !this.isMulti && this.value
+      return (this.clearable && this.inputText !== '' && this.isHover && !this.isMulti && this.value) || (this.filterMethod && this.isHover && !this.isMulti && this.value)
     },
     hasSpOptions() {
       return this.spOptions && this.spOptions.length
@@ -340,7 +341,7 @@ export default {
     },
     placeholderText() {
       // IE10和IE11上，如果有placeholder，input显示以后IE辣鸡浏览器会自动触发input事件
-      return this.isIE ? '' : this.$slots.center && this.isCustomFilter && this.selectInputVisible && !!this.value ? '' : this.helperText
+      return this.isIE ? '' : this.useCenterSlotCustomFilter && this.selectInputVisible && !!this.value ? '' : this.helperText
     },
     isCustomFilter() { // 是否是自定义搜索
       return this.filterable && this.filterMethod && typeof this.filterMethod === 'function'
@@ -353,6 +354,10 @@ export default {
     },
     showGroupMultiSelectNum() {
       return 2 <= this.groupMultipleSelected.length
+    },
+    // 开启自定义内容搜索：指定了filter-method且使用了center插槽
+    useCenterSlotCustomFilter() {
+      return this.$slots.center && this.isCustomFilter
     }
   },
 
@@ -376,22 +381,24 @@ export default {
         this.broadcast('SpSelectDropdown', 'updatePopper')
       } else {
         // 如果filterable开启了，用户输入的值在options中不存在的话，清空
+        this.broadcast('SpSelectDropdown', 'destroyPopper')
         if (this.filterable) {
           // 清空
           this.inputText = ''
-           if (!this.$slots.center && !this.isCustomFilter) {
-            if (this.oldInputText) {
-              this.inputText = this.oldInputText
-            }
-            if (this.singleSelected) {
-              this.inputText = this.singleSelected
-            }
-            if(this.inputText == '') {
-              this.clearValue()
-            }
+          if (this.useCenterSlotCustomFilter) {
+            this.debounceFilterMethod?.()
+            return
+          }
+          if (this.oldInputText) {
+            this.inputText = this.oldInputText
+          }
+          if (this.singleSelected) {
+            this.inputText = this.singleSelected
+          }
+          if (this.inputText == '') {
+            this.clearValue()
           }
         }
-        this.broadcast('SpSelectDropdown', 'destroyPopper')
       }
       // 触发form的校验
       if (this.validateEvent && !val) {
@@ -577,7 +584,7 @@ export default {
           // 单选情况
           for (let i = 0, len = this.spOptions.length; i < len; i++) {
             if (this.spOptions[i].value === val) {
-              this.inputText = this.$slots.center && this.isCustomFilter ? '' : this.spOptions[i].label
+              this.inputText = this.useCenterSlotCustomFilter ? '' : this.spOptions[i].label
               this.evOptionHoverIndex = i
               break
             }
@@ -613,15 +620,9 @@ export default {
      * 切换文本输入框显示
      */
     toggleSelectInputShow(show) {
-      if (this.$slots.center && this.isCustomFilter) {
+      if (this.useCenterSlotCustomFilter) {
         this.selectInputVisible = show
         this.selectInputBoxHeight = show && !!this.value ? '100%' : this.height - 2 + 'px'
-        if (!show) {
-          this.singleSelected = ''
-          this.inputText = ''
-          this.oldInputText = null
-          this.debounceFilterMethod?.()
-        }
       }
     },
     /**
@@ -980,8 +981,8 @@ export default {
   }
 
   &__center--bg {
-    opacity: 0.5;
-    color: #c7cbd1;
+    opacity: 0.2;
+    color: #012257;
   }
 
   &__center ~ .sp-selectInput__absolute {
