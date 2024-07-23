@@ -434,9 +434,8 @@ export default{
       :filter-method="myFilterMethod"
     >
       <div slot="center" class="bindCardSelectItemBox">
-        <div>bankAccountName</div>
-        <div>bankName</div>
-        <div>bankAccout</div>
+        <div>{{ currentSelectCenterSlot.bankAccountName }}</div>
+        <div>{{ currentSelectCenterSlot.bankName }}尾号({{ currentSelectCenterSlot.bankAccount }})</div>
       </div>
       <sp-option
         v-for="item in list4_2_filtered"
@@ -468,7 +467,7 @@ export default{
       loading: false,
       value4_2: '',
       list4_2: [],
-      list4_2_filtered: []
+      list4_2_filtered: [],
     }
   },
   watch: {
@@ -1261,6 +1260,7 @@ export default{
         }
       ],
       list4_2_filtered: [],
+      currentSelectCenterSlot: {},
       value14: [],
       value15: [],
       value16: [],
@@ -1285,6 +1285,7 @@ export default{
     },
     value4_2(val) {
       console.log(val)
+      this.currentSelectCenterSlot = this.list4_2_filtered.find(item => item.accountId === val) || {}
     },
     value5(val) {
       console.log(val)
